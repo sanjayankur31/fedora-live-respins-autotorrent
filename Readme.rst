@@ -10,3 +10,5 @@ and so on that each user uses.
 The `Fedora community <https://getfedora.org>`__ regularly produces live
 respins to save users extra bandwidth on updates. They can be found here:
 http://dl.fedoraproject.org/pub/alt/live-respins/
+
+This script is under the CC0 license.
