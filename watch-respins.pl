@@ -6,14 +6,32 @@
 # If new torrent files are present, it downloads them to a specified location
 
 use 5.10.0;
-use strict;
-use warnings;
 use Data::Dumper;
 use WWW::Mechanize;
 use File::Fetch;
+use Getopt::Std;
+
+use strict;
+use warnings;
 
 # Time out after 30 seconds if a download doesn't succeed
 $File::Fetch::TIMEOUT = 30;
+
+# Options
+my %options = ();
+getopts("hdD", \%options);
+
+if (defined $options{h})
+{
+    print("watch-respins.pl: A simple script to watch and download torrent files for the latest Fedora respins\n\n");
+    print("It only downloads the torrent files that can be passed on to ones torrent client\n");
+    print("Modify the 'flavours' variable to pick what Fedora respins to watch\n\n");
+    print("OPTIONS:\n");
+    print("-h: print help and exit\n");
+    print("-d: delete older torrent files (unimplemented)\n");
+    print("-D: check but do not download torrent files\n");
+    exit 0;
+}
 
 my $release = "F27";
 my $respins_url = "http://dl.fedoraproject.org/pub/alt/live-respins/";
