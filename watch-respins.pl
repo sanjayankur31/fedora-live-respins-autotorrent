@@ -66,10 +66,9 @@ if ($mech->success()) {
             $link->url =~ m/$release-(.*)-x86_64-(\d{8})\.torrent$/;
             my $flavour = $1;
             my $remote_version = $2;
-            my $local_version = "";
-            print("Checking requested flavour: $flavour\n");
-
             my $local_version = "0";
+            print("-> Checking requested flavour: $flavour\n");
+
             foreach my $current_file (@current_files)
             {
                 if ($current_file =~ m/$release-$flavour-x86_64-(\d{8})/ )
@@ -79,11 +78,18 @@ if ($mech->success()) {
             }
             if ($local_version ne $remote_version)
             {
-                print("Local version ($local_version) is different from remote version ($remote_version). Downloading\n");
-                my $file_loc = $respins_url.$link->url;
-                print("Downloading: $file_loc to $torrent_dir\n");
-                my $fetcher = File::Fetch->new(uri => $file_loc);
-                my $where = $fetcher->fetch(to => $torrent_dir);
+                print("---> Local version ($local_version) is different from remote version ($remote_version).\n");
+                if (defined $options{D})
+                {
+                    print("---> -D flag provided. Not downloading file.\n");
+                }
+                else
+                {
+                    my $file_loc = $respins_url.$link->url;
+                    print("Downloading: $file_loc to $torrent_dir\n");
+                    my $fetcher = File::Fetch->new(uri => $file_loc);
+                    my $where = $fetcher->fetch(to => $torrent_dir);
+                }
             }
         }
     }
