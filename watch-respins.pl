@@ -19,7 +19,7 @@ $File::Fetch::TIMEOUT = 30;
 
 # Options
 my %options = ();
-getopts("hdD", \%options);
+getopts("hdcitf:", \%options);
 
 if (defined $options{h})
 {
@@ -28,28 +28,49 @@ if (defined $options{h})
     print("Modify the 'flavours' variable to pick what Fedora respins to watch\n\n");
     print("OPTIONS:\n");
     print("-h: print help and exit\n");
-    print("-d: delete older torrent files (unimplemented)\n");
-    print("-D: check but do not download torrent files\n");
+    print("-d: delete older files (unimplemented)\n");
+    print("-c: check only, do not download torrent files\n");
+    print("-t: download torrent files\n");
+    print("-i: download iso files\n");
+    print("-f: a | seperated list of Fedora flavours: default 'CINN|KDE|LXDE|LXQT|MATE|SOAS|WORK|XFCE'\n");
     exit 0;
 }
 
 my $release = "F27";
 my $respins_url = "http://dl.fedoraproject.org/pub/alt/live-respins/";
 my $torrent_dir = "/home/asinha/Downloads/torrent_temps/rtorrent_watch/";
+my $iso_dir = "/home/asinha/Downloads/torrent_temps/rtorrent_temp/";
 my @current_files = ();
-my $download_dir;
-# Select what flavours to download
-my @flavours = (qr/CINN/, qr/KDE/, qr/LXDE/, qr/LXQT/, qr/MATE/, qr/SOAS/, qr/WORK/, qr/XFCE/ );
+my $torrent_download_dir;
+my $iso_download_dir;
+# Default flavours
+my $flavours = "CINN|KDE|LXDE|LXQT|MATE|SOAS|WORK|XFCE";
 
+if (defined $options{f})
+{
+    $flavours = $options{f};
+    print("Checking for $flavours\n");
+}
 if (-d $torrent_dir)
 {
-    print("Downloading to $torrent_dir\n");
-    opendir $download_dir, $torrent_dir or die "Cannot open directory: $!";
-    @current_files = readdir $download_dir;
+    print("Downloading torrents to $torrent_dir\n");
+    opendir $torrent_download_dir, $torrent_dir or die "Cannot open directory: $!";
+    @current_files = readdir $torrent_download_dir;
 }
 else
 {
     print("$torrent_dir does not exist. Please correct path. Exiting\n");
+    exit 1;
+}
+if (-d $iso_dir)
+{
+    print("Downloading isos to $iso_dir\n");
+    opendir $iso_download_dir, $iso_dir or die "Cannot open directory: $!";
+    @current_files = readdir $iso_download_dir;
+}
+else
+{
+    print("$iso_dir does not exist. Please correct path. Exiting\n");
     exit 1;
 }
 
@@ -61,39 +82,83 @@ if ($mech->success()) {
 
     foreach my $link (@all_links)
     {
-        if ( $link->url =~ m/\.torrent$/ and $link->url ~~ @flavours)
+        if (defined $options{t})
         {
-            $link->url =~ m/$release-(.*)-x86_64-(\d{8})\.torrent$/;
-            my $flavour = $1;
-            my $remote_version = $2;
-            my $local_version = "0";
-            print("-> Checking requested flavour: $flavour\n");
+            if ( $link->url =~ m/\.torrent$/ and $link->url =~ m/$flavours/)
+            {
+                $link->url =~ m/$release-(.*)-x86_64-(\d{8})\.torrent$/;
+                my $flavour = $1;
+                my $remote_version = $2;
+                my $local_version = "0";
+                print("-> Checking requested flavour: $flavour\n");
 
-            foreach my $current_file (@current_files)
-            {
-                if ($current_file =~ m/$release-$flavour-x86_64-(\d{8})/ )
+                foreach my $current_file (@current_files)
                 {
-                    $local_version = $1;
+                    if ($current_file =~ m/$release-$flavour-x86_64-(\d{8})/ )
+                    {
+                        $local_version = $1;
+                    }
                 }
-            }
-            if ($local_version ne $remote_version)
-            {
-                print("---> Local version ($local_version) is different from remote version ($remote_version).\n");
-                if (defined $options{D})
+                if ($local_version ne $remote_version)
                 {
-                    print("---> -D flag provided. Not downloading file.\n");
+                    print("---> Local version ($local_version) is different from remote version ($remote_version).\n");
+                    if (defined $options{c})
+                    {
+                        print("---> -c flag provided. Not downloading file.\n");
+                    }
+                    else
+                    {
+                        my $file_loc = $respins_url.$link->url;
+                        print("Downloading: $file_loc to $torrent_dir\n");
+                        my $fetcher = File::Fetch->new(uri => $file_loc);
+                        my $where = $fetcher->fetch(to => $torrent_dir);
+                    }
                 }
                 else
                 {
-                    my $file_loc = $respins_url.$link->url;
-                    print("Downloading: $file_loc to $torrent_dir\n");
-                    my $fetcher = File::Fetch->new(uri => $file_loc);
-                    my $where = $fetcher->fetch(to => $torrent_dir);
+                    print("---> Already have latest version. Moving on\n");
                 }
             }
+
+        }
+        if (defined $options{i})
+        {
+            if ( $link->url =~ m/\.iso$/ and $link->url =~ m/$flavours/ )
+            {
+                $link->url =~ m/$release-(.*)-x86_64-(\d{8})\.iso$/;
+                my $flavour = $1;
+                my $remote_version = $2;
+                my $local_version = "0";
+                print("-> Checking requested flavour: $flavour\n");
+
+                foreach my $current_file (@current_files)
+                {
+                    if ($current_file =~ m/$release-$flavour-x86_64-(\d{8})/ )
+                    {
+                        $local_version = $1;
+                    }
+                }
+                if ($local_version ne $remote_version)
+                {
+                    print("---> Local version ($local_version) is different from remote version ($remote_version).\n");
+                    if (defined $options{c})
+                    {
+                        print("---> -c flag provided. Not downloading file.\n");
+                    }
+                    else
+                    {
+                        my $file_loc = $respins_url.$link->url;
+                        print("Downloading: $file_loc to $iso_dir\n");
+                        my $fetcher = File::Fetch->new(uri => $file_loc);
+                        my $where = $fetcher->fetch(to => $iso_dir);
+                    }
+                }
+            }
+
         }
     }
-    closedir $download_dir;
+    closedir $torrent_download_dir;
+    closedir $iso_download_dir;
 }
 else
 {
