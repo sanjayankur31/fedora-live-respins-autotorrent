@@ -89,10 +89,12 @@ if ($mech->success()) {
 
     foreach my $link (@all_links)
     {
+        my $remote_loc = $respins_url.$link->url;
         if (defined $options{t})
         {
             if ( $link->url =~ m/\.torrent$/ and $link->url =~ m/$flavours/)
             {
+                print("Looking at $remote_loc\n");
                 $link->url =~ m/$release-(.*)-x86_64-(\d{8})\.torrent$/;
                 my $flavour = $1;
                 my $remote_version = $2;
@@ -111,13 +113,12 @@ if ($mech->success()) {
                     print("---> Local version ($local_version) is different from remote version ($remote_version).\n");
                     if (defined $options{c})
                     {
-                        print("---> -c flag provided. Not downloading file.\n");
+                        print("---> -c flag provided. Not downloading.\n");
                     }
                     else
                     {
-                        my $file_loc = $respins_url.$link->url;
-                        print("Downloading: $file_loc to $torrent_dir\n");
-                        my $fetcher = File::Fetch->new(uri => $file_loc);
+                        print("Downloading: $remote_loc to $torrent_dir\n");
+                        my $fetcher = File::Fetch->new(uri => $remote_loc);
                         my $where = $fetcher->fetch(to => $torrent_dir);
                     }
                 }
@@ -132,6 +133,7 @@ if ($mech->success()) {
         {
             if ( $link->url =~ m/\.iso$/ and $link->url =~ m/$flavours/ )
             {
+                print("Looking at $remote_loc\n");
                 $link->url =~ m/$release-(.*)-x86_64-(\d{8})\.iso$/;
                 my $flavour = $1;
                 my $remote_version = $2;
@@ -150,13 +152,12 @@ if ($mech->success()) {
                     print("---> Local version ($local_version) is different from remote version ($remote_version).\n");
                     if (defined $options{c})
                     {
-                        print("---> -c flag provided. Not downloading file.\n");
+                        print("---> -c flag provided. Not downloading.\n");
                     }
                     else
                     {
-                        my $file_loc = $respins_url.$link->url;
-                        print("Downloading: $file_loc to $iso_dir\n");
-                        my $fetcher = File::Fetch->new(uri => $file_loc);
+                        print("Downloading: $remote_loc to $iso_dir\n");
+                        my $fetcher = File::Fetch->new(uri => $remote_loc);
                         my $where = $fetcher->fetch(to => $iso_dir);
                     }
                 }
