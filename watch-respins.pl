@@ -19,7 +19,7 @@ $File::Fetch::TIMEOUT = 30;
 
 # Options
 my %options = ();
-getopts("hdcitf:", \%options);
+getopts("hdcitf:u:", \%options);
 
 if (defined $options{h})
 {
@@ -32,6 +32,7 @@ if (defined $options{h})
     print("-c: check only, do not download torrent files\n");
     print("-t: download torrent files\n");
     print("-i: download iso files\n");
+    print("-u: URL of respins page\n");
     print("-f: a | seperated list of Fedora flavours: default 'CINN|KDE|LXDE|LXQT|MATE|SOAS|WORK|XFCE'\n");
     exit 0;
 }
@@ -45,6 +46,12 @@ my $torrent_download_dir;
 my $iso_download_dir;
 # Default flavours
 my $flavours = "CINN|KDE|LXDE|LXQT|MATE|SOAS|WORK|XFCE";
+
+if (defined $options{u})
+{
+    $respins_url = $options{u};
+    print("Looking for files at $respins_url");
+}
 
 if (defined $options{f})
 {
